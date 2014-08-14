@@ -1,14 +1,19 @@
 import re
 import os
+import stat
 import signal
 import time
-import sh
+from threading import Event, Thread
+
 from distutils.spawn import find_executable
-from pygatt import PygattException
+import sh
+
+from . import PygattException, Device
 
 
 class Adapter(object):
     def __init__(self, hci_device='hci0', hcitool_path=None, gatttool_path=None):
+        self.found_macs = []
         self.event = Event()
         self.hci_device = hci_device
         if hcitool_path is None:
@@ -18,6 +23,8 @@ class Adapter(object):
                 hcitool_path = find_executable('hcitool')
             if hcitool_path is None or not os.path.isfile(hcitool_path):
                 raise PygattException("hcitool not found")
+        if os.geteuid() != 0 and not (os.stat(hcitool_path).st_mode & stat.S_ISUID):
+            raise PygattException("You either must run pygatt as root or hcitool must be setuid root (sudo chmod u+s %s)" % hcitool_path)
         self.hcitool_path = hcitool_path
 
         if gatttool_path is None:
@@ -27,6 +34,8 @@ class Adapter(object):
                 gatttool_path = find_executable('gatttool')
             if gatttool_path is None or not os.path.isfile(gatttool_path):
                 raise PygattException("gatttool not found")
+        if os.geteuid() != 0 and not (os.stat(gatttool_path).st_mode & stat.S_ISUID):
+            raise PygattException("You either must run pygatt as root or gatttool must be setuid root (sudo chmod u+s %s)" % gatttool_path)
         self.gatttool_path = gatttool_path
         self.continue_discovery = None
 
@@ -73,17 +82,33 @@ class Adapter(object):
             if success_callback is not None and self.continue_discovery:
                 success_callback(found_devices)
 
-    def _success_callback(self):
+    def _success_callback(self, found_macs):
+        self.found_macs = found_macs
+        self.event.set()
 
+    def _error_callback(self):
+        self.event.set()
+
+    def _found_callback(self, mac):
+        pass
 
     def discover(self, max_seconds=2, min_seconds=0, mac_regex=None):
+        self.found_macs = []
+        self.event.clear()
         thread = Thread(
-            target=self.async_device.connect,
+            target=self.discover_async,
             kwargs={
-                'connected_callback': self._connected_callback,
+                'success_callback': self._success_callback,
                 'error_callback': self._error_callback,
-                'disconnected_callback': self._disconnected_callback
+                'found_callback': self._found_callback,
+                'max_seconds': max_seconds,
+                'min_seconds': min_seconds,
+                'mac_regex': mac_regex,
             }
         )
         thread.start()
-        self.do_discovery_async()
+        self.event.wait()
+        return [Device(mac, self) for mac in self.found_macs]
+
+    def __repr__(self):
+        return '%s hci_device:%s' % (self.__class__, self.hci_device)

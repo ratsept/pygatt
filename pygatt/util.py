@@ -1,11 +1,11 @@
 import sys
 import time
+import struct
 
+import pygatt
 from pygatt.bluetooth import Adapter, DEFAULT_ADAPTER, Device
 
 
-mac = None
-macs = []
 
 
 def batch_lamps(adapter=DEFAULT_ADAPTER, mac_filter=None):

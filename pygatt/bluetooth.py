@@ -238,6 +238,7 @@ class Device(object):
         self.connected = False
 
     def connect(self):
+        self.event.clear()
         thread = Thread(
             target=self.async_device.connect,
             kwargs={
@@ -250,7 +251,7 @@ class Device(object):
 
         if not self.event.wait(self.CONNECT_TIMEOUT):
             raise ConnectionException("Connection timed out")
-        self.event.clear()
+
         if not self.connected:
             raise ConnectionException("Unable to connect")
 
