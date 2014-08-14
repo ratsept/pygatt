@@ -54,7 +54,6 @@ class Adapter(object):
         def callback(line):
             match = MAC_RE.match(line)
             if match:
-                print 'FOUND'
                 mac = match.groupdict()['mac']
                 if (mac_regex is not None and not mac_regex.match(mac)) or mac in found_devices:
                     return
@@ -95,7 +94,6 @@ class Adapter(object):
         pass
 
     def discover(self, max_seconds=2, min_seconds=0, mac_regex=None):
-        print 'discover'
         self.found_macs = []
         self.event.clear()
         thread = Thread(
