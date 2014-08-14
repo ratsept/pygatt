@@ -13,9 +13,14 @@ from . import PygattException, Device
 
 
 class Adapter(object):
-    def __init__(self, hci_device='hci0', hcitool_path=None, gatttool_path=None):
+    def __init__(self, hci_device=None, hcitool_path=None, gatttool_path=None):
         self.found_macs = []
         self.event = Event()
+        if hci_device is None:
+            if 'HCI_DEVICE' in os.environ:
+                hci_device = os.environ['HCI_DEVICE']
+            else:
+                hci_device = 'hci0'
         self.hci_device = hci_device
         if hcitool_path is None:
             if 'HCITOOL_PATH' in os.environ:
@@ -110,6 +115,9 @@ class Adapter(object):
         thread.start()
         self.event.wait()
         return [Device(mac, self) for mac in self.found_macs]
+
+    def get_device(self, mac):
+        return Device(mac, self)
 
     def continuous_discovery(self, mac_regex=None):
         last_device = None

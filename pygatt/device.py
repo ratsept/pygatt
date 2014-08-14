@@ -77,8 +77,6 @@ class Device(object):
         self.to_gatt = to_gatt
 
         def out_callback(line):
-            line = line.strip()
-            #print 'line is: ', line
             if line.startswith('[   ]'):
                 if self.connected:
                     if self.disconnected_callback is not None:
@@ -107,8 +105,6 @@ class Device(object):
                 )
             elif 'written successfully' in line:
                 self.set_characteristic_callback()
-            else:
-                print 'xxxxxxxxxxxxxx unknown line: ', line
 
         def error_callback(line):
             if self.error_callback is not None:
