@@ -4,6 +4,7 @@ import stat
 import signal
 import time
 from threading import Event, Thread
+from datetime import datetime
 
 from distutils.spawn import find_executable
 import sh
@@ -53,6 +54,7 @@ class Adapter(object):
         def callback(line):
             match = MAC_RE.match(line)
             if match:
+                print 'FOUND'
                 mac = match.groupdict()['mac']
                 if (mac_regex is not None and not mac_regex.match(mac)) or mac in found_devices:
                     return
@@ -93,6 +95,7 @@ class Adapter(object):
         pass
 
     def discover(self, max_seconds=2, min_seconds=0, mac_regex=None):
+        print 'discover'
         self.found_macs = []
         self.event.clear()
         thread = Thread(
@@ -109,6 +112,16 @@ class Adapter(object):
         thread.start()
         self.event.wait()
         return [Device(mac, self) for mac in self.found_macs]
+
+    def continuous_discovery(self, mac_regex=None):
+        last_device = None
+        while True:
+            devices = self.discover(mac_regex=mac_regex, max_seconds=1, min_seconds=0)
+            for device in devices:
+                if last_device is not None and last_device.disconnect_timestamp is not None and (datetime.utcnow() - last_device.disconnect_timestamp).total_seconds() < 3:
+                    continue
+                last_device = device
+                yield device
 
     def __repr__(self):
         return '%s hci_device:%s' % (self.__class__, self.hci_device)

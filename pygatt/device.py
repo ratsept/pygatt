@@ -4,6 +4,7 @@ import time
 import sh
 from Queue import Queue
 from threading import Event, Thread
+from datetime import datetime
 
 from . import PygattException, encode_bt_value, decode_bt_value
 from .utils import standardize_uuid
@@ -41,11 +42,13 @@ class Device(object):
         self.get_characteristic_callback = None
         self.set_characteristic_callback = None
         self.process = None
+        self.disconnect_timestamp = None
 
         self.event = Event()
 
     def quit(self):
         self.connected = False
+        self.disconnect_timestamp = datetime.utcnow()
         self.to_gatt.put('quit\n')
 
     def set_characteristic_async(self, uuid, data_format, value, callback):
@@ -74,18 +77,20 @@ class Device(object):
         self.to_gatt = to_gatt
 
         def out_callback(line):
-            print line
-            if '**' in line:
-                if self.connected and line.startswith('[%s]' % self.mac):
+            line = line.strip()
+            #print 'line is: ', line
+            if line.startswith('[   ]'):
+                if self.connected:
                     if self.disconnected_callback is not None:
                         self.disconnected_callback()
                     self.quit()
+            elif line.startswith('[CON]'):
+                if not self.connected:
+                    self.connected = True
+                    to_gatt.put('characteristics\n')
             elif 'Error' in line:
                 error_callback(line)
-            elif 'connection successful' in line.lower():
-                to_gatt.put('characteristics\n')
-                self.connected = True
-            elif any(x in line for x in ('Attempting to connect', 'char-read-uuid', 'quit', 'connect', 'characteristics')):
+            elif any(x in line.lower() for x in ('attempting to connect', 'char-read-uuid', 'quit', 'connect', 'characteristics', 'command not found')):
                 pass
             elif 'char value handle' in line:
                 match = self.CHAR_RE.match(line)
@@ -102,6 +107,8 @@ class Device(object):
                 )
             elif 'written successfully' in line:
                 self.set_characteristic_callback()
+            else:
+                print 'xxxxxxxxxxxxxx unknown line: ', line
 
         def error_callback(line):
             if self.error_callback is not None:

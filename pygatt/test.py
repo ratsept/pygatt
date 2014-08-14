@@ -1,8 +1,7 @@
-from time import sleep
-from pygatt import Adapter
+import pygatt
 
-a = Adapter()
-for device in a.discover():
+a = pygatt.Adapter()
+for device in a.continuous_discovery():
     device.connect()
-    sleep(1)
+    print device.get_characteristic('2b00', pygatt.UINT32)
     device.disconnect()
