@@ -10,7 +10,7 @@ pip install git+https://github.com/Sonopro/pygatt.git
 
 ### Requirements
 
-Pygatt has been tested to work with the version of `bluez` included in Ubuntu 14.04- there is no need to compile bluez manually.  Pygatt requires [`sh`](https://github.com/amoffat/sh) but it should be automatically installed by pip.
+Pygatt has been tested to work with the version of `bluez` included in Ubuntu 14.04- there is no need to compile `bluez` manually.  Pygatt requires [`sh`](https://github.com/amoffat/sh) but it should be automatically installed by pip.
 
 You must run any scripts that use pygatt as `root` or alternatively you must `setuid` the `hcitoool` and `gatttool` executables:
 ```
@@ -44,7 +44,7 @@ for device in adapter.discover():
 ```python
 import pygatt
 adapter = pygatt.Adapter()
-device = a.get_device('90:59:AF:15:C3:A9')
+device = adapter.get_device('90:59:AF:15:C3:A9')
 device.connect()
 device.set_characteristic('2b00', pygatt.UINT32, 1024)
 device.disconnect()
