@@ -103,7 +103,7 @@ class Device(object):
                         binascii.unhexlify(value.replace(' ', '').strip())
                     )
                 )
-            elif 'written successfully' in line:
+            if 'written successfully' in line:
                 self.set_characteristic_callback()
 
         def error_callback(line):
