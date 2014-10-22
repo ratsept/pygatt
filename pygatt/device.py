@@ -19,7 +19,7 @@ class TimeoutException(PygattException):
 
 
 class Device(object):
-    DEFAULT_TIMEOUT = 3
+    DEFAULT_TIMEOUT = 5
     CHAR_VALUE_RE = re.compile(r'.*?handle: 0x[0-9a-f]+\s+value: (?P<value>([0-9a-f]{2}\s?)+)\s*$', re.IGNORECASE)
     CHAR_RE = re.compile(
         r'^.*?handle: 0x[0-9a-f]+, char properties: 0x[0-9a-f]+, char value handle: (?P<handle>0x[0-9a-f]+), uuid: (?P<uuid>[a-z0-9-]+)\s*$',
