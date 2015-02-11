@@ -112,7 +112,7 @@ class Device(object):
             self.quit()
 
         gatttool = sh.Command(self.adapter.gatttool_path)
-        process = gatttool('-i', self.adapter.hci_device, '-b', self.mac, '-I',
+        process = gatttool('-i', self.adapter.hci_device, '-t', 'random', '-b', self.mac, '-I',
                            _bg=True, _out=out_callback, _err=error_callback, _in=to_gatt)
         self.process = process
         to_gatt.put('connect\n')
